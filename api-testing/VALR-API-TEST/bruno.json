@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "VALR-API-TEST",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
