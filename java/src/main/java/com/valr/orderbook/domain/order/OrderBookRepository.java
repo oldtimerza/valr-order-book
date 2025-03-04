@@ -7,5 +7,5 @@ import java.util.function.Consumer;
 public interface OrderBookRepository {
     void fetchOrderBookForCurrencyPairAsync(CurrencyPair currencyPair, Consumer<OrderBook> onComplete, Consumer<Exception> onError);
 
-    void save(OrderBook orderBook);
+    void save(OrderBook orderBook, Consumer<Exception> onError);
 }

@@ -6,12 +6,12 @@ import com.valr.orderbook.domain.TimeInForce;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class LimitOrder {
     private final UUID id;
     private final BuySellSide side;
-    private final BigDecimal quantity;
     private final int price;
     private final CurrencyPair currencyPair;
     private final int orderCount;
@@ -20,76 +20,121 @@ public class LimitOrder {
     private final TimeInForce timeInForce;
     private final boolean allowMargin;
     private final boolean reduceOnly;
-    private final Instant createdAt;
+    private final LocalDateTime createdAt;
+    private BigDecimal quantity;
 
-    public LimitOrder(UUID id,
-                      BuySellSide side,
-                      BigDecimal quantity,
-                      int price,
-                      CurrencyPair currencyPair,
-                      int orderCount,
-                      boolean postOnly,
-                      String customerOrderId,
-                      TimeInForce timeInForce,
-                      boolean allowMargin,
-                      boolean reduceOnly,
-                      Instant createdAt
-   ) {
-        this.id = id;
-        this.side = side;
+    private LimitOrder(Builder builder) {
+        this.id = builder.id;
+        this.side = builder.side;
+        this.quantity = builder.quantity;
+        this.price = builder.price;
+        this.currencyPair = builder.currencyPair;
+        this.orderCount = builder.orderCount;
+        this.postOnly = builder.postOnly;
+        this.customerOrderId = builder.customerOrderId;
+        this.timeInForce = builder.timeInForce;
+        this.allowMargin = builder.allowMargin;
+        this.reduceOnly = builder.reduceOnly;
+        this.createdAt = builder.createdAt;
+    }
+
+    public UUID getId() { return id; }
+    public BuySellSide getSide() { return side; }
+    public BigDecimal getQuantity() { return quantity; }
+    public int getPrice() { return price; }
+    public CurrencyPair getCurrencyPair() { return currencyPair; }
+    public int getOrderCount() { return orderCount; }
+    public boolean isPostOnly() { return postOnly; }
+    public String getCustomerOrderId() { return customerOrderId; }
+    public TimeInForce getTimeInForce() { return timeInForce; }
+    public boolean isAllowMargin() { return allowMargin; }
+    public boolean isReduceOnly() { return reduceOnly; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public void subtractQuantity(final BigDecimal amount) {
+        setQuantity(this.quantity.subtract(amount));
+    }
+
+    public void setQuantity(final BigDecimal quantity) {
         this.quantity = quantity;
-        this.price = price;
-        this.currencyPair = currencyPair;
-        this.orderCount = orderCount;
-        this.postOnly = postOnly;
-        this.customerOrderId = customerOrderId;
-        this.timeInForce = timeInForce;
-        this.allowMargin = allowMargin;
-        this.reduceOnly = reduceOnly;
-        this.createdAt = createdAt;
     }
 
-    public BuySellSide getSide() {
-        return side;
-    }
+    public static class Builder {
+        private UUID id = UUID.randomUUID(); // Default to a new UUID
+        private BuySellSide side;
+        private BigDecimal quantity;
+        private int price;
+        private CurrencyPair currencyPair;
+        private int orderCount = 1; // Default order count to 1
+        private boolean postOnly = false;
+        private String customerOrderId = "";
+        private TimeInForce timeInForce;
+        private boolean allowMargin = false;
+        private boolean reduceOnly = false;
+        private LocalDateTime createdAt = LocalDateTime.now(); // Default to current time
 
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
+        public Builder side(BuySellSide side) {
+            this.side = side;
+            return this;
+        }
 
-    public int getPrice() {
-        return price;
-    }
+        public Builder quantity(BigDecimal quantity) {
+            this.quantity = quantity;
+            return this;
+        }
 
-    public CurrencyPair getCurrencyPair() {
-        return currencyPair;
-    }
+        public Builder price(int price) {
+            this.price = price;
+            return this;
+        }
 
-    public int getOrderCount() {
-        return orderCount;
-    }
+        public Builder currencyPair(CurrencyPair currencyPair) {
+            this.currencyPair = currencyPair;
+            return this;
+        }
 
-    public boolean isPostOnly() {
-        return postOnly;
-    }
+        public Builder orderCount(int orderCount) {
+            this.orderCount = orderCount;
+            return this;
+        }
 
-    public String getCustomerOrderId() {
-        return customerOrderId;
-    }
+        public Builder postOnly(boolean postOnly) {
+            this.postOnly = postOnly;
+            return this;
+        }
 
-    public TimeInForce getTimeInForce() {
-        return timeInForce;
-    }
+        public Builder customerOrderId(String customerOrderId) {
+            this.customerOrderId = customerOrderId;
+            return this;
+        }
 
-    public boolean isAllowMargin() {
-        return allowMargin;
-    }
+        public Builder timeInForce(TimeInForce timeInForce) {
+            this.timeInForce = timeInForce;
+            return this;
+        }
 
-    public boolean isReduceOnly() {
-        return reduceOnly;
-    }
+        public Builder allowMargin(boolean allowMargin) {
+            this.allowMargin = allowMargin;
+            return this;
+        }
 
-    public BigDecimal getVolume() {
-        return BigDecimal.valueOf(this.price).multiply(this.quantity);
+        public Builder reduceOnly(boolean reduceOnly) {
+            this.reduceOnly = reduceOnly;
+            return this;
+        }
+
+        public Builder createdAt(LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Builder id(UUID id) {
+            this.id = id;
+            return this;
+        }
+
+        public LimitOrder build() {
+            return new LimitOrder(this);
+        }
     }
 }

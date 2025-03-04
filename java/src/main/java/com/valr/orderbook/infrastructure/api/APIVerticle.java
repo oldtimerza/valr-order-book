@@ -1,7 +1,13 @@
 package com.valr.orderbook.infrastructure.api;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.valr.orderbook.domain.InvalidCurrencyPairException;
 import com.valr.orderbook.domain.order.OrderBook;
-import com.valr.orderbook.infrastructure.api.response.MinimalLimitOrderResponse;
+import com.valr.orderbook.domain.order.OrderBookForCurrencyPairNotFound;
+import com.valr.orderbook.infrastructure.api.response.AnonymousOrderBookData;
+import com.valr.orderbook.infrastructure.api.response.ErrorCode;
+import com.valr.orderbook.infrastructure.api.response.ErrorResponse;
+import com.valr.orderbook.infrastructure.api.response.LimitOrderIdOnly;
 import com.valr.orderbook.domain.CurrencyPair;
 import com.valr.orderbook.domain.order.LimitOrder;
 import com.valr.orderbook.application.OrderBookService;
@@ -12,7 +18,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -26,24 +34,29 @@ public class APIVerticle extends AbstractVerticle {
 
   public APIVerticle(final OrderBookService orderBookService, TradeService tradeService) {
     this.orderBookService = orderBookService;
-      this.tradeService = tradeService;
+    this.tradeService = tradeService;
   }
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
+    DatabindCodec.mapper().registerModule(new JavaTimeModule());
+
     HttpServer server = vertx.createHttpServer();
 
     Router router = Router.router(vertx);
 
     router.route(HttpMethod.GET, "/:currencypair/orderbook")
-          .respond(this::fetchOrderBook);
+            .respond(this::fetchOrderBook)
+            .failureHandler(this::handleError);
 
     router.route(HttpMethod.POST, "/"+ API_VERSION +"/orders/limit")
             .handler(BodyHandler.create().setBodyLimit(10000))
-            .respond(this::createLimitOrder);
+            .respond(this::createLimitOrder)
+            .failureHandler(this::handleError);
 
     router.route(HttpMethod.POST,  "/:currencypair/tradehistory")
-            .respond(this::fetchTradeHistory);
+            .respond(this::fetchTradeHistory)
+            .failureHandler(this::handleError);
 
     server.requestHandler(router);
 
@@ -64,7 +77,9 @@ public class APIVerticle extends AbstractVerticle {
     Promise<OrderBook> promiseOrderBook = Promise.promise();
     orderBookService.fetchOrderBookAsync(currencyPair, promiseOrderBook::complete, promiseOrderBook::fail);
 
-    return promiseOrderBook.future().map(JsonObject::mapFrom);
+    return promiseOrderBook.future()
+            .map(AnonymousOrderBookData::from)
+            .map(JsonObject::mapFrom);
   }
 
   private Future<JsonObject> createLimitOrder(RoutingContext routingContext) {
@@ -77,7 +92,7 @@ public class APIVerticle extends AbstractVerticle {
 
     return promiseLimitOrderCreation
             .future()
-            .map(MinimalLimitOrderResponse::from)
+            .map(LimitOrderIdOnly::from)
             .map(JsonObject::mapFrom);
   }
 
@@ -90,5 +105,23 @@ public class APIVerticle extends AbstractVerticle {
     tradeService.fetchTradeHistoryAsync(currencyPair, promiseTradeHistory::complete, promiseTradeHistory::fail);
 
     return promiseTradeHistory.future().map(JsonObject::mapFrom);
+  }
+
+  private void handleError(RoutingContext failureRoutingContext) {
+      HttpServerResponse response = failureRoutingContext.response();
+
+      if (failureRoutingContext.failure() instanceof OrderBookForCurrencyPairNotFound) {
+        ErrorResponse errorResponse = new ErrorResponse(failureRoutingContext.failure().toString(), ErrorCode.E001);
+        response.setStatusCode(404)
+                .end(JsonObject.mapFrom(errorResponse).toString());
+        return;
+      }
+
+      if(failureRoutingContext.failure() instanceof InvalidCurrencyPairException) {
+        ErrorResponse errorResponse = new ErrorResponse(failureRoutingContext.failure().toString(), ErrorCode.E002);
+        response.setStatusCode(400)
+                .end(JsonObject.mapFrom(errorResponse).toString());
+        return;
+      }
   }
 }

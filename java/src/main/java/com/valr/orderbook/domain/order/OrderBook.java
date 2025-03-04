@@ -5,9 +5,12 @@ import com.valr.orderbook.domain.CurrencyPair;
 import com.valr.orderbook.domain.InvalidCurrencyPairException;
 import com.valr.orderbook.domain.trade.Trade;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.UUID;
 
 public class OrderBook {
     private final CurrencyPair currencyPair;
@@ -15,6 +18,10 @@ public class OrderBook {
     private final PriorityQueue<LimitOrder> asks;
 
     private final PriorityQueue<LimitOrder> bids;
+
+    private LocalDateTime lastChange;
+
+    private int sequenceNumber;
 
     public OrderBook(CurrencyPair currencyPair, PriorityQueue<LimitOrder> asks, PriorityQueue<LimitOrder> bids) {
         this.currencyPair = currencyPair;
@@ -30,7 +37,23 @@ public class OrderBook {
         return bids;
     }
 
-    public LimitOrder placeLimitOrder(LimitOrder limitOrder) {
+    public LocalDateTime getLastChange() {
+        return lastChange;
+    }
+
+    public void setLastChange(LocalDateTime lastChange) {
+        this.lastChange = lastChange;
+    }
+
+    public int getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public void setSequenceNumber(int sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
+    }
+
+    public void placeLimitOrder(LimitOrder limitOrder) {
         if(limitOrder.getCurrencyPair() != this.currencyPair){
             throw new InvalidCurrencyPairException(limitOrder.getCurrencyPair().toString());
         }
@@ -39,11 +62,6 @@ public class OrderBook {
         } else {
             bids.add(limitOrder);
         }
-        if(!limitOrder.isPostOnly()) {
-            tradeOnMatchingLimitOrders();
-        }
-
-        return limitOrder;
     }
 
     public List<Trade> tradeOnMatchingLimitOrders() {
@@ -55,11 +73,54 @@ public class OrderBook {
             LimitOrder highestBid = bids.peek();
             LimitOrder lowestAsk = asks.peek();
 
+            if(highestBid == null || lowestAsk == null) {
+                break;
+            }
+
             if(highestBid.getPrice() >= lowestAsk.getPrice()) {
-                tradesOccured.add(Trade.forOrder(highestBid));
-                tradesOccured.add(Trade.forOrder(lowestAsk));
-                bids.remove();
-                asks.remove();
+                final int sellPrice = lowestAsk.getPrice();
+                final BigDecimal sellQuantity = lowestAsk.getQuantity();
+                final BigDecimal buyQuantity = highestBid.getQuantity();
+
+                LocalDateTime timeOfTrade = LocalDateTime.now();
+
+                BigDecimal tradeQuantity;
+
+                if(buyQuantity.compareTo(sellQuantity) > 0) {
+                    tradeQuantity = sellQuantity;
+                    highestBid.subtractQuantity(sellQuantity);
+                    asks.poll();
+                } else if(buyQuantity.compareTo(sellQuantity) < 0) {
+                    tradeQuantity = buyQuantity;
+                    lowestAsk.subtractQuantity(buyQuantity);
+                    bids.poll();
+                } else {
+                    tradeQuantity = sellQuantity;
+                    asks.poll();
+                    bids.poll();
+                }
+
+                Trade sellTrade = new Trade(
+                        sellPrice,
+                        tradeQuantity,
+                        this.currencyPair,
+                        timeOfTrade,
+                        BuySellSide.SELL,
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(sellPrice).multiply(tradeQuantity)
+                );
+                tradesOccured.add(sellTrade);
+
+                Trade buyTrade = new Trade(
+                        sellPrice,
+                        tradeQuantity,
+                        this.currencyPair,
+                        timeOfTrade,
+                        BuySellSide.BUY,
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(sellPrice).multiply(tradeQuantity)
+                );
+                tradesOccured.add(buyTrade);
             } else {
                 matchingOrders = false;
             }
@@ -67,4 +128,5 @@ public class OrderBook {
 
         return tradesOccured;
     }
+
 }

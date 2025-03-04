@@ -2,25 +2,24 @@ package com.valr.orderbook.domain.trade;
 
 import com.valr.orderbook.domain.BuySellSide;
 import com.valr.orderbook.domain.CurrencyPair;
-import com.valr.orderbook.domain.order.LimitOrder;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class Trade {
-        final int price;
-        final BigDecimal quantity;
-        final CurrencyPair currencyPair;
-        final Instant tradedAt;
-        final BuySellSide takerSide;
-        final UUID id;
-        final BigDecimal quoteVolume;
+    private final int price;
+    private final BigDecimal quantity;
+    private final CurrencyPair currencyPair;
+    private final LocalDateTime tradedAt;
+    private final BuySellSide takerSide;
+    private final UUID id;
+    private final BigDecimal quoteVolume;
 
     public Trade(int price,
                  BigDecimal quantity,
                  CurrencyPair currencyPair,
-                 Instant tradedAt,
+                 LocalDateTime tradedAt,
                  BuySellSide takerSide,
                  UUID id,
                  BigDecimal quoteVolume) {
@@ -33,20 +32,31 @@ public class Trade {
         this.quoteVolume = quoteVolume;
     }
 
-    public static Trade forOrder(LimitOrder limitOrder) {
-        return new Trade(
-                limitOrder.getPrice(),
-                limitOrder.getQuantity(),
-                limitOrder.getCurrencyPair(),
-                Instant.now(),
-                limitOrder.getSide(),
-                UUID.randomUUID(),
-                limitOrder.getVolume()
-        );
-    }
-
     public CurrencyPair getCurrencyPair() {
         return this.currencyPair;
     }
 
+    public int getPrice() {
+        return price;
+    }
+
+    public BigDecimal getQuantity() {
+        return quantity;
+    }
+
+    public LocalDateTime getTradedAt() {
+        return tradedAt;
+    }
+
+    public BuySellSide getTakerSide() {
+        return takerSide;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public BigDecimal getQuoteVolume() {
+        return quoteVolume;
+    }
 }

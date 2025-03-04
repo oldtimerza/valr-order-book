@@ -24,7 +24,7 @@ public class OrderBookService {
                 .fetchOrderBookForCurrencyPairAsync(limitOrder.getCurrencyPair(),
                 orderBook -> {
                     orderBook.placeLimitOrder(limitOrder);
-                    orderBookRepository.save(orderBook);
+                    orderBookRepository.save(orderBook, onError);
                     onComplete.accept(limitOrder);
                 }, onError);
     }

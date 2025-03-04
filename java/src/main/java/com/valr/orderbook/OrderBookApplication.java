@@ -13,6 +13,7 @@ import java.util.ArrayList;
 
 public class OrderBookApplication {
     public static void main(String[] args) {
+
         Vertx vertx = Vertx.vertx();
 
         OrderBookRepository orderBookRepository = new SimpleInMemoryOrderBookRepository();
