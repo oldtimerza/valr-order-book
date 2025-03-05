@@ -15,7 +15,7 @@ public class SimpleInMemoryTradeRepository implements TradeRepository {
     }
 
     @Override
-    public void saveTrades(List<Trade> trades) {
+    public void saveTrades(List<Trade> trades, Consumer<Exception> onError) {
         this.trades.addAll(trades);
     }
 

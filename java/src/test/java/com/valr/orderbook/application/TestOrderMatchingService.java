@@ -4,6 +4,7 @@ import com.valr.orderbook.domain.BuySellSide;
 import com.valr.orderbook.domain.CurrencyPair;
 import com.valr.orderbook.domain.TimeInForce;
 import com.valr.orderbook.domain.order.*;
+import com.valr.orderbook.domain.trade.TradeRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.PriorityQueue;
 import java.util.UUID;
@@ -21,15 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-public class TestOrderBookService {
+public class TestOrderMatchingService {
 
     private OrderBookRepository mockOrderBookRepository;
-    private OrderBookService orderBookService;
+    private TradeRepository mockTradeRepository;
+    private OrderMatchingService orderMatchingService;
 
     @BeforeEach
     public void setup() {
+        mockTradeRepository = mock(TradeRepository.class);
         mockOrderBookRepository = mock(OrderBookRepository.class);
-        orderBookService = new OrderBookService(mockOrderBookRepository);
+        orderMatchingService = new OrderMatchingService(mockOrderBookRepository, mockTradeRepository);
     }
 
     @Test
@@ -78,7 +80,7 @@ public class TestOrderBookService {
             return null;
         }).when(mockOrderBookRepository).fetchOrderBookForCurrencyPairAsync(eq(CurrencyPair.BTCZAR), any(), any());
 
-        orderBookService.fetchOrderBookAsync(currencyPair,
+        orderMatchingService.fetchOrderBookAsync(currencyPair,
                 actualOrderBook -> {
                     assertEquals(orderBook, actualOrderBook);
                 },

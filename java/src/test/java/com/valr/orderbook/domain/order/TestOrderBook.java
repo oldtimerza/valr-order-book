@@ -1,9 +1,9 @@
-package com.valr.orderbook.domain;
+package com.valr.orderbook.domain.order;
 
-import com.valr.orderbook.domain.order.AsksQueue;
-import com.valr.orderbook.domain.order.BidsQueue;
-import com.valr.orderbook.domain.order.LimitOrder;
-import com.valr.orderbook.domain.order.OrderBook;
+import com.valr.orderbook.domain.BuySellSide;
+import com.valr.orderbook.domain.CurrencyPair;
+import com.valr.orderbook.domain.InvalidCurrencyPairException;
+import com.valr.orderbook.domain.TimeInForce;
 import com.valr.orderbook.domain.trade.Trade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

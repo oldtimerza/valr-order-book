@@ -10,15 +10,15 @@ import com.valr.orderbook.infrastructure.api.response.ErrorResponse;
 import com.valr.orderbook.infrastructure.api.response.LimitOrderIdOnly;
 import com.valr.orderbook.domain.CurrencyPair;
 import com.valr.orderbook.domain.order.LimitOrder;
-import com.valr.orderbook.application.OrderBookService;
+import com.valr.orderbook.application.OrderMatchingService;
 import com.valr.orderbook.domain.trade.Trade;
-import com.valr.orderbook.application.TradeService;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.Router;
@@ -29,12 +29,10 @@ import java.util.List;
 
 public class APIVerticle extends AbstractVerticle {
   private final static String API_VERSION = "v1";
-  private final OrderBookService orderBookService;
-  private final TradeService tradeService;
+  private final OrderMatchingService orderMatchingService;
 
-  public APIVerticle(final OrderBookService orderBookService, TradeService tradeService) {
-    this.orderBookService = orderBookService;
-    this.tradeService = tradeService;
+  public APIVerticle(final OrderMatchingService orderMatchingService) {
+    this.orderMatchingService = orderMatchingService;
   }
 
   @Override
@@ -54,7 +52,7 @@ public class APIVerticle extends AbstractVerticle {
             .respond(this::createLimitOrder)
             .failureHandler(this::handleError);
 
-    router.route(HttpMethod.POST,  "/:currencypair/tradehistory")
+    router.route(HttpMethod.GET,  "/:currencypair/tradehistory")
             .respond(this::fetchTradeHistory)
             .failureHandler(this::handleError);
 
@@ -75,9 +73,10 @@ public class APIVerticle extends AbstractVerticle {
     final CurrencyPair currencyPair = CurrencyPair.valueOf(currencyPairQueryParam);
 
     Promise<OrderBook> promiseOrderBook = Promise.promise();
-    orderBookService.fetchOrderBookAsync(currencyPair, promiseOrderBook::complete, promiseOrderBook::fail);
+    orderMatchingService.fetchOrderBookAsync(currencyPair, promiseOrderBook::complete, promiseOrderBook::fail);
 
-    return promiseOrderBook.future()
+    return promiseOrderBook
+            .future()
             .map(AnonymousOrderBookData::from)
             .map(JsonObject::mapFrom);
   }
@@ -88,7 +87,7 @@ public class APIVerticle extends AbstractVerticle {
 
     Promise<LimitOrder> promiseLimitOrderCreation = Promise.promise();
 
-    orderBookService.createLimitOrderAsync(limitOrder, promiseLimitOrderCreation::complete, promiseLimitOrderCreation::fail);
+    orderMatchingService.createLimitOrderAsync(limitOrder, promiseLimitOrderCreation::complete, promiseLimitOrderCreation::fail);
 
     return promiseLimitOrderCreation
             .future()
@@ -96,15 +95,17 @@ public class APIVerticle extends AbstractVerticle {
             .map(JsonObject::mapFrom);
   }
 
-  private Future<JsonObject> fetchTradeHistory(RoutingContext routingContext) {
+  private Future<JsonArray> fetchTradeHistory(RoutingContext routingContext) {
     final String currencyPairQueryParam = routingContext.pathParam("currencypair");
     final CurrencyPair currencyPair = CurrencyPair.valueOf(currencyPairQueryParam);
 
     Promise<List<Trade>> promiseTradeHistory = Promise.promise();
 
-    tradeService.fetchTradeHistoryAsync(currencyPair, promiseTradeHistory::complete, promiseTradeHistory::fail);
+    orderMatchingService.fetchTradeHistoryAsync(currencyPair, promiseTradeHistory::complete, promiseTradeHistory::fail);
 
-    return promiseTradeHistory.future().map(JsonObject::mapFrom);
+    return promiseTradeHistory
+            .future()
+            .map(JsonArray::of);
   }
 
   private void handleError(RoutingContext failureRoutingContext) {

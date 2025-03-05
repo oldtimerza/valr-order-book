@@ -8,7 +8,6 @@ import com.valr.orderbook.domain.order.OrderBook;
 import com.valr.orderbook.domain.order.OrderBookRepository;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.PriorityQueue;
 import java.util.UUID;
@@ -19,6 +18,7 @@ public class SimpleInMemoryOrderBookRepository implements OrderBookRepository {
     private OrderBook orderBook;
 
     public SimpleInMemoryOrderBookRepository() {
+        //To emulate having data in database already
         PriorityQueue<LimitOrder> asks = new AsksQueue();
 
         PriorityQueue<LimitOrder> bids = new BidsQueue();
