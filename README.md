@@ -1,4 +1,5 @@
 ## Reasoning
+- The reason for the api-testing folder is to allow a place for me to just simply store Bruno(https://www.usebruno.com) used for interacting with VALR endpoints, and my own for simple e2e testing.
 - Reason behind the PriorityQueue is to use a heap for storage and retrieveal of limitorders based on bid/ask price, this is to ensure O(log n)  time complexity for retrieval. In order matching.
 - The reasoning behind the AsksQueue and BidsQueue is because PriorityQueues are by default min heaps in Java I believe. So bids need to be maximal , so negative values when prioritising in the heap insert is necessary. It's also to ensure that a "correct" standard PriorityQueue is available for use with the limit orders.
 
