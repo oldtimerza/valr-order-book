@@ -4,10 +4,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.valr.orderbook.domain.InvalidCurrencyPairException;
 import com.valr.orderbook.domain.order.OrderBook;
 import com.valr.orderbook.domain.order.OrderBookForCurrencyPairNotFound;
-import com.valr.orderbook.infrastructure.api.response.AnonymousOrderBookData;
+import com.valr.orderbook.infrastructure.api.request.CreateLimitOrderRequest;
+import com.valr.orderbook.infrastructure.api.response.orderbook.AnonymousOrderBookData;
 import com.valr.orderbook.infrastructure.api.response.ErrorCode;
 import com.valr.orderbook.infrastructure.api.response.ErrorResponse;
-import com.valr.orderbook.infrastructure.api.response.LimitOrderIdOnly;
+import com.valr.orderbook.infrastructure.api.response.orderbook.LimitOrderIdOnly;
 import com.valr.orderbook.domain.CurrencyPair;
 import com.valr.orderbook.domain.order.LimitOrder;
 import com.valr.orderbook.application.OrderMatchingService;
@@ -83,7 +84,19 @@ public class APIVerticle extends AbstractVerticle {
 
   private Future<JsonObject> createLimitOrder(RoutingContext routingContext) {
     JsonObject requestJson = routingContext.body().asJsonObject();
-    LimitOrder limitOrder = requestJson.mapTo(LimitOrder.class);
+    CreateLimitOrderRequest createLimitOrderRequest = requestJson.mapTo(CreateLimitOrderRequest.class);
+
+    LimitOrder limitOrder = new LimitOrder.Builder()
+            .side(createLimitOrderRequest.getSide())
+            .quantity(createLimitOrderRequest.getQuantity())
+            .price(createLimitOrderRequest.getPrice())
+            .currencyPair(createLimitOrderRequest.getCurrencyPair())
+            .postOnly(createLimitOrderRequest.isPostOnly())
+            .customerOrderId(createLimitOrderRequest.getCustomerOrderId())
+            .timeInForce(createLimitOrderRequest.getTimeInForce())
+            .allowMargin(createLimitOrderRequest.isAllowMargin())
+            .reduceOnly(createLimitOrderRequest.isReduceOnly())
+            .build();
 
     Promise<LimitOrder> promiseLimitOrderCreation = Promise.promise();
 

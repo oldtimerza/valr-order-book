@@ -1,4 +1,4 @@
-package com.valr.orderbook.infrastructure.api.response;
+package com.valr.orderbook.infrastructure.api.response.orderbook;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;

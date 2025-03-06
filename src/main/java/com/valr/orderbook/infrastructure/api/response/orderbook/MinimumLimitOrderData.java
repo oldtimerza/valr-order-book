@@ -1,4 +1,4 @@
-package com.valr.orderbook.infrastructure.api.response;
+package com.valr.orderbook.infrastructure.api.response.orderbook;
 
 import com.valr.orderbook.domain.BuySellSide;
 import com.valr.orderbook.domain.CurrencyPair;

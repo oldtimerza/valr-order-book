@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "LOCAL-VALR-API-TEST",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

@@ -11,12 +11,12 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestOrderBook {
     private final CurrencyPair orderBookCurrencyPair = CurrencyPair.BTCZAR;
@@ -33,7 +33,7 @@ public class TestOrderBook {
     @DisplayName("Should place sell limit order in asks")
     public void shouldAddSellLimitOrder() {
         LimitOrder sellOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(1000)
                 .reduceOnly(false)
@@ -57,7 +57,7 @@ public class TestOrderBook {
     @DisplayName("Should place buy limit order in bids")
     public void shouldAddBuyLimitOrder() {
         LimitOrder buyOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.BUY)
                 .price(1000)
                 .reduceOnly(false)
@@ -81,7 +81,7 @@ public class TestOrderBook {
     @DisplayName("Should not allow placing of orders with non matching currency pairs")
     public void shouldNotAllowOrdersOfNonMatchingCurrencyPair() {
         LimitOrder sellOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(1000)
                 .reduceOnly(false)
@@ -106,7 +106,7 @@ public class TestOrderBook {
         final int price = 1000;
         final BigDecimal quantity = BigDecimal.valueOf(0.5);
         LimitOrder sellOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(price)
                 .reduceOnly(false)
@@ -121,7 +121,7 @@ public class TestOrderBook {
                 .build();
 
         LimitOrder matchingBuyOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.BUY)
                 .price(price)
                 .reduceOnly(false)
@@ -160,11 +160,198 @@ public class TestOrderBook {
                 UUID.randomUUID(),
                 quantity.multiply(BigDecimal.valueOf(price))
         );
-        assertTradesEqual(expectedSellTrade, trades.get(0));
-        assertTradesEqual(expectedBuyTrade, trades.get(1));
+        assertTradeEqual(expectedSellTrade, trades.get(0));
+        assertTradeEqual(expectedBuyTrade, trades.get(1));
     }
 
-    private static void assertTradesEqual(Trade expectedTrade, Trade actualTrade) {
+    @Test
+    @DisplayName("Should fulfill Bid with as many asks as possible")
+    public void shouldMatchAsMuchOfBidWithAvailableAsks() {
+        final int buyprice = 1000;
+        final int lowestSellPrice = 700;
+        final int midSellPrice = 800;
+        final int highestSellPrice = 900;
+        final BigDecimal totalQuantity = BigDecimal.ONE;
+        LimitOrder lowestAsk = new LimitOrder.Builder()
+                .timeInForce(TimeInForce.IOC)
+                .side(BuySellSide.SELL)
+                .price(lowestSellPrice)
+                .reduceOnly(false)
+                .id(UUID.randomUUID())
+                .quantity(BigDecimal.valueOf(0.3))
+                .orderCount(1)
+                .postOnly(true)
+                .customerOrderId("someId")
+                .allowMargin(true)
+                .createdAt(LocalDateTime.now())
+                .currencyPair(orderBookCurrencyPair)
+                .build();
+
+        LimitOrder midAsk = new LimitOrder.Builder()
+                .timeInForce(TimeInForce.IOC)
+                .side(BuySellSide.SELL)
+                .price(midSellPrice)
+                .reduceOnly(false)
+                .id(UUID.randomUUID())
+                .quantity(BigDecimal.valueOf(0.3))
+                .orderCount(1)
+                .postOnly(true)
+                .customerOrderId("someId")
+                .allowMargin(true)
+                .createdAt(LocalDateTime.now())
+                .currencyPair(orderBookCurrencyPair)
+                .build();
+
+        LimitOrder highestAsk = new LimitOrder.Builder()
+                .timeInForce(TimeInForce.IOC)
+                .side(BuySellSide.SELL)
+                .price(highestSellPrice)
+                .reduceOnly(false)
+                .id(UUID.randomUUID())
+                .quantity(BigDecimal.valueOf(0.5))
+                .orderCount(1)
+                .postOnly(true)
+                .customerOrderId("someId")
+                .allowMargin(true)
+                .createdAt(LocalDateTime.now())
+                .currencyPair(orderBookCurrencyPair)
+                .build();
+
+        LimitOrder bid = new LimitOrder.Builder()
+                .timeInForce(TimeInForce.IOC)
+                .side(BuySellSide.BUY)
+                .price(buyprice)
+                .reduceOnly(false)
+                .id(UUID.randomUUID())
+                .quantity(totalQuantity)
+                .orderCount(1)
+                .postOnly(true)
+                .customerOrderId("someId")
+                .allowMargin(true)
+                .createdAt(LocalDateTime.now())
+                .currencyPair(orderBookCurrencyPair)
+                .build();
+
+        orderBook.placeLimitOrder(lowestAsk);
+        orderBook.placeLimitOrder(midAsk);
+        orderBook.placeLimitOrder(highestAsk);
+        orderBook.placeLimitOrder(bid);
+        List<Trade> trades = orderBook.tradeOnMatchingLimitOrders();
+
+        final BigDecimal remainingQuantityFromBidForHighestAsk = BigDecimal.valueOf(0.4);
+        List<Trade> expectedTrades = new ArrayList<>() {{
+            add(new Trade(
+                    lowestAsk.getPrice(),
+                    lowestAsk.getQuantity(),
+                    lowestAsk.getCurrencyPair(),
+                    lowestAsk.getCreatedAt(),
+                    BuySellSide.SELL,
+                    lowestAsk.getId(),
+                    lowestAsk.getQuantity().multiply(BigDecimal.valueOf(lowestAsk.getPrice()))
+            ));
+            add(new Trade(
+                    lowestAsk.getPrice(),
+                    lowestAsk.getQuantity(),
+                    lowestAsk.getCurrencyPair(),
+                    lowestAsk.getCreatedAt(),
+                    BuySellSide.BUY,
+                    lowestAsk.getId(),
+                    lowestAsk.getQuantity().multiply(BigDecimal.valueOf(lowestAsk.getPrice()))
+            ));
+            add(new Trade(
+                    midAsk.getPrice(),
+                    midAsk.getQuantity(),
+                    midAsk.getCurrencyPair(),
+                    midAsk.getCreatedAt(),
+                    BuySellSide.SELL,
+                    midAsk.getId(),
+                    midAsk.getQuantity().multiply(BigDecimal.valueOf(midAsk.getPrice()))
+            ));
+            add(new Trade(
+                    midAsk.getPrice(),
+                    midAsk.getQuantity(),
+                    midAsk.getCurrencyPair(),
+                    midAsk.getCreatedAt(),
+                    BuySellSide.BUY,
+                    midAsk.getId(),
+                    midAsk.getQuantity().multiply(BigDecimal.valueOf(midAsk.getPrice()))
+            ));
+            add(new Trade(
+                    highestAsk.getPrice(),
+                    remainingQuantityFromBidForHighestAsk,
+                    highestAsk.getCurrencyPair(),
+                    highestAsk.getCreatedAt(),
+                    BuySellSide.SELL,
+                    highestAsk.getId(),
+                    remainingQuantityFromBidForHighestAsk.multiply(BigDecimal.valueOf(highestAsk.getPrice()))
+            ));
+            add(new Trade(
+                    highestAsk.getPrice(),
+                    remainingQuantityFromBidForHighestAsk,
+                    highestAsk.getCurrencyPair(),
+                    highestAsk.getCreatedAt(),
+                    BuySellSide.BUY,
+                    highestAsk.getId(),
+                    remainingQuantityFromBidForHighestAsk.multiply(BigDecimal.valueOf(highestAsk.getPrice()))
+            ));
+        }};
+        assertTradesEqual(expectedTrades, trades);
+        assertEquals(1, orderBook.getAsks().size());
+        assertEquals(0, orderBook.getBids().size());
+    }
+
+    @Test
+    @DisplayName("Should not match any trades if bid and ask don't match")
+    public void shouldNotMatchOnNonMatchingBidsAndAsks() {
+        final int buyprice = 900;
+        final int sellPrice = 1000;
+        LimitOrder missingSellOrder = new LimitOrder.Builder()
+                .timeInForce(TimeInForce.IOC)
+                .side(BuySellSide.SELL)
+                .price(sellPrice)
+                .reduceOnly(false)
+                .id(UUID.randomUUID())
+                .quantity(BigDecimal.valueOf(0.3))
+                .orderCount(1)
+                .postOnly(true)
+                .customerOrderId("someId")
+                .allowMargin(true)
+                .createdAt(LocalDateTime.now())
+                .currencyPair(orderBookCurrencyPair)
+                .build();
+
+        LimitOrder missingBuyOrder = new LimitOrder.Builder()
+                .timeInForce(TimeInForce.IOC)
+                .side(BuySellSide.BUY)
+                .price(buyprice)
+                .reduceOnly(false)
+                .id(UUID.randomUUID())
+                .quantity(BigDecimal.valueOf(0.3))
+                .orderCount(1)
+                .postOnly(true)
+                .customerOrderId("someId")
+                .allowMargin(true)
+                .createdAt(LocalDateTime.now())
+                .currencyPair(orderBookCurrencyPair)
+                .build();
+
+        orderBook.placeLimitOrder(missingSellOrder);
+        orderBook.placeLimitOrder(missingBuyOrder);
+        List<Trade> trades = orderBook.tradeOnMatchingLimitOrders();
+
+        assertEquals(0, trades.size());
+    }
+
+    private static void assertTradesEqual(List<Trade> expectedTrades, List<Trade> actualTrades) {
+        assertNotNull(expectedTrades);
+        assertNotNull(actualTrades);
+        assertEquals(expectedTrades.size(), actualTrades.size());
+        for(int i = 0; i < expectedTrades.size(); i++) {
+            assertTradeEqual(expectedTrades.get(i), actualTrades.get(i));
+        }
+    }
+
+    private static void assertTradeEqual(Trade expectedTrade, Trade actualTrade) {
         assertEquals(expectedTrade.getPrice(), actualTrade.getPrice());
         assertEquals(expectedTrade.getQuantity(), actualTrade.getQuantity());
         assertEquals(expectedTrade.getCurrencyPair(), actualTrade.getCurrencyPair());

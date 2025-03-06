@@ -53,6 +53,8 @@ public class OrderBook {
         this.sequenceNumber = sequenceNumber;
     }
 
+    public CurrencyPair getCurrencyPair() { return this.currencyPair; }
+
     public void placeLimitOrder(LimitOrder limitOrder) {
         if(limitOrder.getCurrencyPair() != this.currencyPair){
             throw new InvalidCurrencyPairException(limitOrder.getCurrencyPair().toString());
