@@ -73,7 +73,7 @@ public class TestAPIVerticle {
                 .side(BuySellSide.SELL)
                 .quantity(BigDecimal.valueOf(0.100))
                 .reduceOnly(false)
-                .timeInForce(TimeInForce.GoodTillCancelled)
+                .timeInForce(TimeInForce.GTC)
                 .build();
 
         LimitOrder buyOrder = new LimitOrder.Builder()
@@ -88,7 +88,7 @@ public class TestAPIVerticle {
                 .side(BuySellSide.BUY)
                 .quantity(BigDecimal.valueOf(0.100))
                 .reduceOnly(false)
-                .timeInForce(TimeInForce.GoodTillCancelled)
+                .timeInForce(TimeInForce.GTC)
                 .build();
 
         asks.add(sellOrder);
@@ -171,7 +171,7 @@ public class TestAPIVerticle {
             return null;
         }).when(mockOrderMatchingService).fetchTradeHistoryAsync(eq(CurrencyPair.BTCZAR), any(), any());
 
-        final String expectedJsonResponse = "[[{\"price\":100,\"quantity\":0.05,\"currencyPair\":\"BTCZAR\",\"tradedAt\":[2021,2,3,12,0],\"takerSide\":\"SELL\",\"id\":\"4f914ae1-ff7b-4670-a05b-34e737ccbccc\",\"quoteVolume\":5}]]";
+        final String expectedJsonResponse = "[[{\"price\":100,\"quantity\":0.05,\"currencyPair\":\"BTCZAR\",\"tradedAt\":\"2021-02-03T12:00:00\",\"takerSide\":\"SELL\",\"id\":\"4f914ae1-ff7b-4670-a05b-34e737ccbccc\",\"quoteVolume\":5}]]";
         vertx.createHttpClient()
                 .request(HttpMethod.GET, PORT, HOST, "/BTCZAR/tradehistory")
                 .compose(HttpClientRequest::send)
@@ -194,7 +194,7 @@ public class TestAPIVerticle {
                 CurrencyPair.BTCZAR,
                 false,
                 "someCustomId",
-                TimeInForce.ImmediateOrCancel,
+                TimeInForce.IOC,
                 false,
                 false
         );

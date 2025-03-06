@@ -1,5 +1,6 @@
 package com.valr.orderbook.domain.trade;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.valr.orderbook.domain.BuySellSide;
 import com.valr.orderbook.domain.CurrencyPair;
 
@@ -44,6 +45,7 @@ public class Trade {
         return quantity;
     }
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     public LocalDateTime getTradedAt() {
         return tradedAt;
     }

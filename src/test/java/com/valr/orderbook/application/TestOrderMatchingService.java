@@ -52,7 +52,7 @@ public class TestOrderMatchingService {
                 .side(BuySellSide.SELL)
                 .quantity(BigDecimal.valueOf(0.100))
                 .reduceOnly(false)
-                .timeInForce(TimeInForce.GoodTillCancelled)
+                .timeInForce(TimeInForce.GTC)
                 .build();
 
         LimitOrder buyOrder = new LimitOrder.Builder()
@@ -67,7 +67,7 @@ public class TestOrderMatchingService {
                 .side(BuySellSide.BUY)
                 .quantity(BigDecimal.valueOf(0.100))
                 .reduceOnly(false)
-                .timeInForce(TimeInForce.GoodTillCancelled)
+                .timeInForce(TimeInForce.GTC)
                 .build();
 
         asks.add(sellOrder);

@@ -33,7 +33,7 @@ public class TestOrderBook {
     @DisplayName("Should place sell limit order in asks")
     public void shouldAddSellLimitOrder() {
         LimitOrder sellOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(1000)
                 .reduceOnly(false)
@@ -57,7 +57,7 @@ public class TestOrderBook {
     @DisplayName("Should place buy limit order in bids")
     public void shouldAddBuyLimitOrder() {
         LimitOrder buyOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.BUY)
                 .price(1000)
                 .reduceOnly(false)
@@ -81,7 +81,7 @@ public class TestOrderBook {
     @DisplayName("Should not allow placing of orders with non matching currency pairs")
     public void shouldNotAllowOrdersOfNonMatchingCurrencyPair() {
         LimitOrder sellOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(1000)
                 .reduceOnly(false)
@@ -106,7 +106,7 @@ public class TestOrderBook {
         final int price = 1000;
         final BigDecimal quantity = BigDecimal.valueOf(0.5);
         LimitOrder sellOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(price)
                 .reduceOnly(false)
@@ -121,7 +121,7 @@ public class TestOrderBook {
                 .build();
 
         LimitOrder matchingBuyOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.BUY)
                 .price(price)
                 .reduceOnly(false)
@@ -173,7 +173,7 @@ public class TestOrderBook {
         final int highestSellPrice = 900;
         final BigDecimal totalQuantity = BigDecimal.ONE;
         LimitOrder lowestAsk = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(lowestSellPrice)
                 .reduceOnly(false)
@@ -188,7 +188,7 @@ public class TestOrderBook {
                 .build();
 
         LimitOrder midAsk = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(midSellPrice)
                 .reduceOnly(false)
@@ -203,7 +203,7 @@ public class TestOrderBook {
                 .build();
 
         LimitOrder highestAsk = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(highestSellPrice)
                 .reduceOnly(false)
@@ -218,7 +218,7 @@ public class TestOrderBook {
                 .build();
 
         LimitOrder bid = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.BUY)
                 .price(buyprice)
                 .reduceOnly(false)
@@ -306,7 +306,7 @@ public class TestOrderBook {
         final int buyprice = 900;
         final int sellPrice = 1000;
         LimitOrder missingSellOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.SELL)
                 .price(sellPrice)
                 .reduceOnly(false)
@@ -321,7 +321,7 @@ public class TestOrderBook {
                 .build();
 
         LimitOrder missingBuyOrder = new LimitOrder.Builder()
-                .timeInForce(TimeInForce.ImmediateOrCancel)
+                .timeInForce(TimeInForce.IOC)
                 .side(BuySellSide.BUY)
                 .price(buyprice)
                 .reduceOnly(false)

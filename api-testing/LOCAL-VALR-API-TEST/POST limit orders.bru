@@ -1,0 +1,25 @@
+meta {
+  name: POST limit orders
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://127.0.0.1:8888/v1/orders/limit
+  body: json
+  auth: none
+}
+
+body:json {
+  {    
+      "side": "SELL",
+      "quantity": "0.100000",
+      "price": "500",
+      "pair": "BTCZAR",
+      "postOnly": false,
+      "customerOrderId": "1234",
+      "timeInForce": "GTC",
+      "allowMargin": "false",
+      "reduceOnly": "false"
+  }
+}
