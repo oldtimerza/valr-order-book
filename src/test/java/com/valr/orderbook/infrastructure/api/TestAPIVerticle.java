@@ -8,16 +8,19 @@ import com.valr.orderbook.domain.TimeInForce;
 import com.valr.orderbook.domain.order.*;
 import com.valr.orderbook.domain.trade.Trade;
 import com.valr.orderbook.domain.trade.TradeRepository;
+import com.valr.orderbook.infrastructure.api.request.CreateLimitOrderRequest;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
 
 import java.math.BigDecimal;
@@ -176,6 +179,62 @@ public class TestAPIVerticle {
                 .onSuccess(body -> testContext.verify(() -> {
                     // Check the response
                     assertEquals(expectedJsonResponse, body.toString());
+                    testContext.completeNow();
+                }))
+                .onFailure(testContext::failNow);
+    }
+
+    @Test
+    @DisplayName("POST /v1/orders/limit - should create limit order")
+    public void shouldCreateLimitOrder(Vertx vertx, VertxTestContext testContext) {
+        CreateLimitOrderRequest createLimitOrderRequest = new CreateLimitOrderRequest(
+                BuySellSide.SELL,
+                BigDecimal.valueOf(0.5),
+                100,
+                CurrencyPair.BTCZAR,
+                false,
+                "someCustomId",
+                TimeInForce.ImmediateOrCancel,
+                false,
+                false
+        );
+        final UUID id = UUID.randomUUID();
+        LimitOrder limitOrder = new LimitOrder.Builder()
+                .id(id)
+                .side(createLimitOrderRequest.getSide())
+                .quantity(createLimitOrderRequest.getQuantity())
+                .price(createLimitOrderRequest.getPrice())
+                .postOnly(createLimitOrderRequest.isPostOnly())
+                .customerOrderId(createLimitOrderRequest.getCustomerOrderId())
+                .timeInForce(createLimitOrderRequest.getTimeInForce())
+                .allowMargin(createLimitOrderRequest.isAllowMargin())
+                .reduceOnly(createLimitOrderRequest.isReduceOnly())
+                .createdAt(LocalDateTime.now())
+                .build();
+        ArgumentCaptor<LimitOrder> limitOrderArgumentCaptor = ArgumentCaptor.forClass(LimitOrder.class);
+        doAnswer((Answer<Void>) invocation -> {
+            Consumer<LimitOrder> callback = invocation.getArgument(1);
+            callback.accept(limitOrder);
+            return null;
+        }).when(mockOrderMatchingService).createLimitOrderAsync(limitOrderArgumentCaptor.capture(), any(), any());
+
+        final String expectedJsonResponse = "{\"id\":\""+ id +"\"}";
+        vertx.createHttpClient()
+                .request(HttpMethod.POST, PORT, HOST, "/v1/orders/limit")
+                .compose(request -> request.send(JsonObject.mapFrom(createLimitOrderRequest).toString()))
+                .compose(HttpClientResponse::body)
+                .onSuccess(body -> testContext.verify(() -> {
+                    // Check the response
+                    assertEquals(expectedJsonResponse, body.toString());
+                    final LimitOrder capturedLimitOrder = limitOrderArgumentCaptor.getValue();
+                    assertEquals(limitOrder.getSide(), capturedLimitOrder.getSide());
+                    assertEquals(limitOrder.getQuantity(), capturedLimitOrder.getQuantity());
+                    assertEquals(limitOrder.getPrice(), capturedLimitOrder.getPrice());
+                    assertEquals(limitOrder.isPostOnly(), capturedLimitOrder.isPostOnly());
+                    assertEquals(limitOrder.getCustomerOrderId(), capturedLimitOrder.getCustomerOrderId());
+                    assertEquals(limitOrder.getTimeInForce(), capturedLimitOrder.getTimeInForce());
+                    assertEquals(limitOrder.isAllowMargin(), capturedLimitOrder.isAllowMargin());
+                    assertEquals(limitOrder.isReduceOnly(), capturedLimitOrder.isReduceOnly());
                     testContext.completeNow();
                 }))
                 .onFailure(testContext::failNow);
