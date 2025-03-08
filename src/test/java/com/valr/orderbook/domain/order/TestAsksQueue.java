@@ -11,7 +11,7 @@ public class TestAsksQueue {
 
     @Test
     @DisplayName("Should order asks by lowest ask first")
-    public void shouldOrderBidsHighestFirst() {
+    public void shouldOrderAsksLowestFirst() {
         AsksQueue asksQueue = new AsksQueue();
 
         UUID highestId = UUID.randomUUID();
